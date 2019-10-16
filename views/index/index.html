@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>trism</title>
+    <link rel="stylesheet" href="/static/layui/css/layui.css">
+</head>
+<body>
+    <div class="layui-layout layui-layout-admin" style="padding: 0 10px;margin-top: 10px;">
+        <div class="layui-layout layui-layout-admin" style="padding: 0 10px;margin-top: 10px;">
+            <div style="margin: 10px 0px">
+                <h1 style="padding-left: 100px;">模拟考试</h1>
+                <label id="simulate" style="padding-left: 50px;padding-top: 10px;visibility: hidden;">正在模拟：总数1280,完成400</label>
+            </div>
+            <form class="layui-form" action="" method="post" style="margin-top: 10px">
+                <div class="layui-form-item">
+                    <label class="layui-form-label">考试年级</label>
+                        
+                    <div class="layui-input-inline">
+                        <select name="grade" lay-verify="required"  lay-search="" style="width: 100%">
+                            <option value="">选择年级</option>
+                            {{range $index,$elem := .gradeList}}
+                            <option value="{{$elem.Name}}"> {{$elem.Name}}</option>
+                            {{end}}
+                        </select>
+                    </div>
+                </div>
+                    
+                <div class="layui-form-item" style="margin-top: 20px">
+                    <label class="layui-form-label">考试名称</label>
+                    <div class="layui-input-inline" style="min-width: 280px;">
+                        <input type="text" name="examname" id="examname" lay-verify="required" autocomplete="off" placeholder="考试名称" class="layui-input" value="">
+                    </div>
+                </div>
+
+                <input type="hidden" id="token" name="token" value="{{.token}}">
+                
+                <div class="layui-form-item" style="margin-top: 30px; padding-left: 65px;">
+                    <div class="layui-input-block">
+                        <button class="layui-btn" lay-submit="" lay-filter="sub">开始模拟</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div id="chart" style="padding-top: 50px;">
+            <div>
+                <div class="layui-col-xs8">
+                    <div id="activeDeatilChart" style="height: 300px;"></div>
+                </div>
+                <div class="layui-col-xs4">
+                    <div id="activeRing" style="height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/static/echart/echarts.min.js"></script>
+    <script src="/static/layui/layui.js"></script>
+    <script>
+        var activeDeatilChart = echarts.init(document.getElementById('activeDeatilChart'))
+        var activeRing = echarts.init(document.getElementById('activeRing'))
+        layui.use(['layer', 'form', 'jquery', 'table'], function(){
+            var layer = layui.layer,
+            form = layui.form,
+            table = layui.table,
+            $ = layui.jquery;
+
+            window.onresize = function(){
+                activeDeatilChart.resize()
+                activeRing.resize()
+            }
+
+            // 加载数据
+            function loadChart(score, scoreRing) {
+                var deatilChartOption = {
+                    title : {
+                        text: '全年级语文排名',
+                        x:'center'
+                    },
+                    color: ['#3398DB'],
+                    tooltip : {
+                        trigger: 'axis',
+                        axisPointer : {        
+                            type : 'shadow'        
+                        }
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    xAxis : [{
+                        type : 'category',
+                        data : score.x,
+                        axisTick: {
+                            alignWithLabel: true
+                        }
+                    }],
+                    yAxis : [{
+                        type : 'value'
+                    }],
+                    series : [{
+                        name:'',
+                        type:'bar',
+                        barWidth: '60%',
+                        data: score.y
+                    }]
+                };
+                var ringOption = {
+                    title : {
+                        text: '语文成绩区间',
+                        x:'center'
+                    },
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: "{a} <br/>{b}: {c} ({d}%)"
+                    },
+                    legend: {
+                        orient: 'vertical',
+                        x: 'left',
+                        data: scoreRing.x
+                    },
+                    series: [{
+                        name:'',
+                        type:'pie',
+                        radius: ['50%', '70%'],
+                        avoidLabelOverlap: false,
+                        label: {
+                            normal: {
+                                show: false,
+                                position: 'center'
+                            },
+                            emphasis: {
+                                show: true,
+                                textStyle: {
+                                    fontSize: '30',
+                                    fontWeight: 'bold'
+                                }
+                            }
+                        },
+                        labelLine: {
+                            normal: {
+                                show: false
+                            }
+                        },
+                        data: scoreRing.y
+                    }]
+                };
+ 
+                activeDeatilChart.setOption(deatilChartOption)
+                activeRing.setOption(ringOption)
+            }
+
+            $(function(){
+                longpoll()
+            })
+
+            function longpoll() {
+                $.ajax({
+                    url: '/v1/longpoll/receiveMessage?token='+$('#token').val(),
+                    type: 'get',
+                    success: function(data, textStatus){
+                        console.log(data)
+                        if(data.code == 0 && data.events) {
+                            $('#simulate').css("visibility","visible")
+                            $('#simulate').text('正在模拟：总数'+data.events[0].data.total+',完成'+data.events[0].data.complete)
+
+                            loadChart(data.events[0].data.chineseScore, data.events[0].data.chineseScoreRing)
+                        }
+                        longpoll()
+                    },
+                    error: function(XMLHttpRequest, textStatus, errorThrown) {
+                        longpoll()
+                    }
+                })
+            }
+
+            form.on('submit(sub)', function(data){
+                var form_data = $("form").serialize()
+                $.post('{{urlfor "BaseExamController.SimulateExam"}}', form_data, function (out) {
+                    if (out.code == 0) {
+                        layer.msg("操作成功")
+                    } else {
+                        layer.msg(out.errmsg)
+                    }
+                }, "json")
+                return false;
+            })
+
+            form.render()
+        })
+    </script>
+</body>
+</html>

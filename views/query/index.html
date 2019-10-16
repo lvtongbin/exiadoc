@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>trism</title>
+    <link rel="stylesheet" href="/static/layui/css/layui.css">
+</head>
+<body>
+    <div class="layui-container" style="padding: 0 10px;margin-top: 10px;">
+        <div class="layui-row">
+            <div class="layui-col-xs4">
+                <div style="margin: 10px 0px">
+                    <h1 style="padding-left: 100px;">查看成绩</h1>
+                </div>
+                <form class="layui-form" action="" method="post" style="margin-top: 10px">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">选择年级</label>  
+                        <div class="layui-input-inline">
+                            <select id="grade" name="grade" lay-filter="grade" lay-verify="required"  lay-search="" style="width: 100%">
+                                <option value="">选择年级</option>
+                                {{range $index,$elem := .gradeList}}
+                                <option value="{{$elem.Name}}"> {{$elem.Name}}</option>
+                                {{end}}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">选择考试</label>
+                        <div class="layui-input-inline">
+                            <select id="exam" name="exam" lay-verify="required"  lay-search="" style="width: 100%"></select>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">选择学校</label>
+                        <div class="layui-input-inline">
+                            <select id="school" name="school" lay-filter="school" lay-verify="required"  lay-search="" style="width: 100%"></select>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">选择班级</label>                        
+                        <div class="layui-input-inline">
+                            <select id="class" name="class" lay-verify="required"  lay-search="" style="width: 100%"></select>
+                        </div>
+                    </div>
+                    <div class="layui-form-item" style="margin-top: 30px; padding-left: 65px;">
+                        <div class="layui-input-block">
+                            <button class="layui-btn" lay-submit="" lay-filter="sub">确定</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="layui-col-xs8">
+                <div class="layui-row">
+                    <div class="layui-col-xs8">
+                        <div id="activeDeatilChart" style="height: 300px;"></div>
+                    </div>
+                    <div class="layui-col-xs4">
+                        <div id="activeRing" style="height: 300px;margin-top: 50px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="layui-row"  style="margin: 20px;visibility: hidden;" id="grade-table">
+            <h1 style="margin: 0 auto;text-align: center;" id="table-title">233445</h2>
+            <table class="layui-hide" id="table_list" lay-filter="table_filter"></table>
+        </div>
+    </div>
+    <script src="/static/echart/echarts.min.js"></script>
+    <script src="/static/layui/layui.js"></script>
+    <script>
+        var activeDeatilChart = echarts.init(document.getElementById('activeDeatilChart'))
+        var activeRing = echarts.init(document.getElementById('activeRing'))
+        layui.use(['layer', 'form', 'jquery', 'table'], function(){
+            var layer = layui.layer,
+            form = layui.form,
+            table = layui.table,
+            $ = layui.jquery;
+
+            window.onresize = function(){
+                activeDeatilChart.resize()
+                activeRing.resize()
+            }
+
+            //方法级渲染
+            table.render({
+                elem: '#table_list'
+                ,url: 'v1/query/queryExam'
+                ,limit: 25
+                ,cols: [[
+                    {fixed:'left', field:'name',title: '学生名称', align:'center', width:180, templet: function(d){
+                        return '<span style="color: #40a9ff;">'+ d.name +'</span>'
+                    }}
+                    ,{field:'student_id',title:'学生ID', align:'center', width: 220}
+                    ,{field:'chinese', title: '语文', align:'center', templet: function(d){
+                        if (Number(d.chinese) < 60) {
+                            return '<span style="color: red;">'+ d.chinese +'</span>'
+                        }
+                        return '<span style="color: #000;">'+ d.chinese +'</span>'
+                    }}
+                    ,{field:'math', title: '数学', align:'center', templet: function(d){
+                        if (Number(d.math) < 60) {
+                            return '<span style="color: red;">'+ d.math +'</span>'
+                        }
+                        return '<span style="color: #000;">'+ d.math +'</span>'
+                    }}
+                    ,{field:'politics', title: '政治', align:'center', templet: function(d){
+                        if (Number(d.politics) < 60) {
+                            return '<span style="color: red;">'+ d.politics +'</span>'
+                        }
+                        return '<span style="color: #000;">'+ d.politics +'</span>'
+                    }}
+                    ,{field:'history', title: '历史', align:'center', templet: function(d){
+                        if (Number(d.history) < 60) {
+                            return '<span style="color: red;">'+ d.history +'</span>'
+                        }
+                        return '<span style="color: #000;">'+ d.history +'</span>'
+                    }}
+                    ,{field:'geography', title: '地理', align:'center', templet: function(d){
+                        if (Number(d.geography) < 60) {
+                            return '<span style="color: red;">'+ d.geography +'</span>'
+                        }
+                        return '<span style="color: #000;">'+ d.geography +'</span>'
+                    }}
+                    ,{field:'chemistry', title: '化学', align:'center', templet: function(d){
+                        if (Number(d.chemistry) < 60) {
+                            return '<span style="color: red;">'+ d.chemistry +'</span>'
+                        }
+                        return '<span style="color: #000;">'+ d.chemistry +'</span>'
+                    }}
+                    ,{field:'physics', title: '物理', align:'center', templet: function(d){
+                        if (Number(d.physics) < 60) {
+                            return '<span style="color: red;">'+ d.physics +'</span>'
+                        }
+                        return '<span style="color: #000;">'+ d.physics +'</span>'
+                    }}
+                    ,{field:'biology', title: '生物', align:'center', templet: function(d){
+                        if (Number(d.biology) < 60) {
+                            return '<span style="color: red;">'+ d.biology +'</span>'
+                        }
+                        return '<span style="color: #000;">'+ d.biology +'</span>'
+                    }}
+                    ,{field:'total', title: '总分', align:'center'}
+                ]]
+                ,id: 'listReload'
+                ,page: true
+                ,height: "full-130"
+            });
+
+            // 加载数据
+            function loadChart(score, scoreRing) {
+                var deatilChartOption = {
+                    title : {
+                        text: '总成绩分布',
+                        x:'center'
+                    },
+                    color: ['#3398DB'],
+                    tooltip : {
+                        trigger: 'axis',
+                        axisPointer : {        
+                            type : 'shadow'        
+                        }
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    xAxis : [{
+                        type : 'category',
+                        data : score.x,
+                        axisTick: {
+                            alignWithLabel: true
+                        }
+                    }],
+                    yAxis : [{
+                        type : 'value'
+                    }],
+                    series : [{
+                        name:'',
+                        type:'bar',
+                        barWidth: '60%',
+                        data: score.y
+                    }]
+                };
+                var ringOption = {
+                    title : {
+                        text: '总成绩区间',
+                        x:'center'
+                    },
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: "{a} <br/>{b}: {c} ({d}%)"
+                    },
+                    legend: {
+                        orient: 'vertical',
+                        x: 'left',
+                        data: scoreRing.x
+                    },
+                    series: [{
+                        name:'',
+                        type:'pie',
+                        radius : '55%',
+                        center: ['40%', '50%'],
+                        avoidLabelOverlap: false,
+                        label: {
+                            normal: {
+                                show: false,
+                                position: 'center'
+                            },
+                            emphasis: {
+                                show: true,
+                                textStyle: {
+                                    fontSize: '30',
+                                    fontWeight: 'bold'
+                                }
+                            }
+                        },
+                        labelLine: {
+                            normal: {
+                                show: false
+                            }
+                        },
+                        data: scoreRing.y
+                    }]
+                };
+ 
+                activeDeatilChart.setOption(deatilChartOption)
+                activeRing.setOption(ringOption)
+            }
+
+            form.on('select(grade)', function(data){
+                var grade = $("#grade").val()
+
+                // 屏蔽table字段
+                if (grade.indexOf("小学") != -1) {
+                    $.each([4, 5, 6, 7, 8, 9], function (index, item) {
+                        $('table.layui-table thead tr th:eq('+item+')').addClass('layui-hide')
+                    })
+                }else{
+                    $.each([4, 5, 6, 7, 8, 9], function (index, item) {
+                        $('table.layui-table thead tr th:eq('+item+')').removeClass('layui-hide')
+                    })
+                }
+                if (grade !== "") {
+                    $.ajax({
+                        url: '/v1/query/selectSchoolAndExam?grade='+grade,
+                        type: 'get',
+                        success: function(data, textStatus){
+                            if(data.code == 0) {
+                                var data = data.data
+                                if(data.exams.length === 0) {
+                                    layer.msg("该年级暂无考试记录，请到模拟页面手动添加")
+                                }
+
+                                var examhtmls = '<option value="">请选择考试</option>'; //全局变量
+                                var schoolhtmls = '<option value="">请选择学校</option><option value="all">全部学校</option>'; //全局变量
+                                $.each(data.exams, function (index, item) {
+                                    examhtmls += '<option value = "' + item.code + '">' + item.name + '</option>'
+                                });
+                                $.each(data.schools, function (index, item) {
+                                    schoolhtmls += '<option value = "' + item.name + '">' + item.name + '</option>'
+                                });
+
+                                $("#exam").html(examhtmls);
+                                $("#school").html(schoolhtmls);
+                                form.render('select');
+                            }
+                        },
+                        error: function(XMLHttpRequest, textStatus, errorThrown) {
+                            console.log(textStatus)
+                        }
+                    })
+                }
+            })
+
+            form.on('select(school)', function(data){
+                var school = $("#school").val() 
+                if (school !== "" && school != "全部学校") {
+                    $.ajax({
+                        url: '/v1/query/selectClass?grade='+$('#grade').val()+"&school="+school,
+                        type: 'get',
+                        success: function(data, textStatus){
+                            if(data.code == 0) {
+                                var htmls = '<option value="">请选择班级</option><option value="all">全部班级</option>'; //全局变量
+                                $.each(data.data, function (index, item) {
+                                    htmls += '<option value = "' + item.name + '">' + item.name + '</option>'
+                                });
+                                $("#class").html(htmls);
+                                form.render('select');
+                            }
+                        },
+                        error: function(XMLHttpRequest, textStatus, errorThrown) {
+                            console.log(textStatus)
+                        }
+                    })
+                }
+            })
+
+            form.on('submit(sub)', function(data){
+                var formdata = $("form").serialize()
+                $('#grade-table').css("visibility","visible")
+                var examtext = $("#exam option:selected").text()
+                var school = $("#school").val()
+                var class1 = $("#class").val()
+                if (school === 'all') {
+                    $('#table-title').text(examtext + '成绩')
+                }else if(class1 === 'all') {
+                    $('#table-title').text(school + examtext + '成绩')
+                }else{
+                    $('#table-title').text(school+ class1 + examtext + '成绩')
+                }
+                table.reload('listReload', {
+                    where: {
+                        grade: $("#grade").val(),
+	                    exam:  $("#exam").val(),
+                        school: school,
+                        class: class1,
+                    }
+                    ,page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                })
+                $.ajax({
+                    url: '/v1/query/getSummary?grade='+$('#grade').val()+"&exam="+$("#exam").val()+"&school="+school+"&class="+class1,
+                    type: 'get',
+                    success: function(data, textStatus){
+                        if(data.code == 0) {
+                            console.log(data)
+                            loadChart(data.data.score, data.data.scoreRing)
+                        }
+                    },
+                    error: function(XMLHttpRequest, textStatus, errorThrown) {
+                        console.log(textStatus)
+                    }
+                })
+                return false;
+            })
+
+            form.render()
+        })
+    </script>
+</body>
+</html>
